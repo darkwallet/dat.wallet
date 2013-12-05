@@ -7,11 +7,10 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.listview import ListView
-#from kivy.uix.dropdown import DropDown
 
 from kivy.config import Config
-Config.set('graphics', 'width', '300')
-Config.set('graphics', 'height', '600')
+Config.set('graphics', 'width', '250')
+Config.set('graphics', 'height', '500')
 
 class RootWidget(BoxLayout):
     pass
@@ -47,35 +46,39 @@ class MainApp(App):
         main_layout = BoxLayout(orientation='vertical')
 
         # balance section
-        balance = BoxLayout(orientation='horizontal')
-        balance.add_widget(Label(text='Balance', halign='right'))
-        balance.add_widget(Label(text='1,276.00 mBTC'))
+        balance = BoxLayout(orientation='horizontal', size_hint_y=0.6)
+        balance.add_widget(Label(text='1,276.00 mBTC', font_size=28, bold=True))
         main_layout.add_widget(balance)
         #end balance section
 
         # next address section
-        nextaddress_label = Label(text='next receive address')
+        nextaddress_label = Label(text='next receive address', size_hint_y=0.3, font_size=20)
         main_layout.add_widget(nextaddress_label)
 
-        nextaddress_input = TextInput(text='1TAYLoR...',
+        # FIX wire this text input up to a real address which may change when a transaction to this address occurs
+        nextaddress_input = TextInput(
+            text='1MNmTPTRp9g4ruE5Hw7kb2AZuaRpVLwGta',
             multiline=False,
             readonly=True,
             #halign='center',
-            size_hint=(1, 0.5))
+            size_hint_y=0.3,
+            font_size=20,
+            foreground_color=(1,1,1,1),
+            background_color=(0,0,0,1))
         # could implement clipboard copy here or convert to Button
         # nextaddress_input.bind(on_text_validate=on_enter)
         main_layout.add_widget(nextaddress_input)
         # end next address section
 
         # send section
-        sendaddress = TextInput(text="1abcdef...")
+        sendaddress = TextInput(hint_text="Enter a payment address", size_hint_y=0.2, font_size=20)
         main_layout.add_widget(sendaddress)
 
-        sendsection = BoxLayout(orientation='horizontal')
-        sendsection.add_widget(TextInput(text='125', halign='right'))
-        #dropdown = DropDown()
-        #sendsection.add_widget()
+        sendsection = BoxLayout(orientation='horizontal', size_hint_y=0.4)
+        sendsection.add_widget(TextInput(text='125', halign='right', font_size=20, padding=20))
+        sendsection.add_widget(Label(text='mBTC', halign='left'))
         sendsection.add_widget(Button(text='Send'))
+
         main_layout.add_widget(sendsection)
         # end send section
 
