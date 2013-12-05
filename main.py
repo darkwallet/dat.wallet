@@ -17,7 +17,11 @@ from kivy.config import Config
 Config.set('graphics', 'width', '309')
 Config.set('graphics', 'height', '500')
 
-import backend
+from kivy.support import install_twisted_reactor
+install_twisted_reactor()
+from twisted.internet import reactor
+
+import backend_core
 import clipboard
 
 class RootWidget(BoxLayout):
@@ -25,6 +29,7 @@ class RootWidget(BoxLayout):
 
 
 class BalanceSection(BoxLayout):
+
     def __init__(self, **kwargs):
         super(BalanceSection, self).__init__(**kwargs)
 
@@ -36,8 +41,10 @@ class BalanceSection(BoxLayout):
         self.add_widget(main_layout)
 
 class ReceiveSection(BoxLayout):
-    def __init__(self, **kwargs):
-        super(ReceiveSection, self).__init__(**kwargs)
+
+    def __init__(self, backend):
+        super(ReceiveSection, self).__init__()
+        self.backend = backend
 
         main_layout = BoxLayout(orientation='vertical')
 
@@ -46,7 +53,7 @@ class ReceiveSection(BoxLayout):
         main_layout.add_widget(nextaddress_label)
 
         # TODO wire this text input up to a real address which may change when a transaction to this address occurs
-        self.current_address = backend.current_address
+        self.current_address = self.backend.current_address
         shortened_address = self.current_address[:6] + "..."
         nextaddress_input = Button(
             text=shortened_address,
@@ -84,6 +91,7 @@ class ReceiveSection(BoxLayout):
         return col
 
 class SendSection(BoxLayout):
+
     def __init__(self, **kwargs):
         super(SendSection, self).__init__(**kwargs)
 
@@ -114,6 +122,7 @@ class SendSection(BoxLayout):
 
 
 class TranscationSection(BoxLayout):
+
     def __init__(self, **kwargs):
         super(TranscationSection, self).__init__(**kwargs)
 
@@ -131,18 +140,27 @@ class TranscationSection(BoxLayout):
         return item_strings
 
 
+def cb(addr, history):
+    print addr, history
+
 class MainApp(App):
+
+    def __init__(self, backend):
+        super(MainApp, self).__init__()
+        self.backend = backend
 
     def build(self):
         root = RootWidget()
 
         main_layout = BoxLayout(orientation='vertical')
         main_layout.add_widget(BalanceSection(size_hint_y=0.4))
-        main_layout.add_widget(ReceiveSection())
+        main_layout.add_widget(ReceiveSection(backend))
         main_layout.add_widget(SendSection(size_hint_y=0.7))
         main_layout.add_widget(TranscationSection(size_hint_y=1))
 
         root.add_widget(main_layout)
+
+        self.backend.update(cb)
 
         return root
 
@@ -152,5 +170,6 @@ if __name__ == '__main__':
 
     seedphrase = sys.argv[1].encode("hex")
     print seedphrase
-    backend = backend.Backend(seedphrase)
-    MainApp().run()
+    backend = backend_core.Backend(seedphrase)
+    MainApp(backend).run()
+

@@ -3,6 +3,8 @@
 ## Installation
 You will need:
 
+    $ sudo apt-get install python-pip
+    $ sudo pip install ecdsa slowaes
     $ mkdir depends
     $ cd depends
     $ git clone https://github.com/caedesvvv/zmqproto.git
