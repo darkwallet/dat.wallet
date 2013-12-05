@@ -57,11 +57,15 @@ class MainApp(App):
         nextaddress_label = Label(text='next receive address')
         main_layout.add_widget(nextaddress_label)
 
-        nextaddress_input = TextInput(text='1TAYLoR...',
+        nextaddress_input = TextInput(
+            text='1MNmTPTRp9g4ruE5Hw7kb2AZuaRpVLwGta',
             multiline=False,
             readonly=True,
             #halign='center',
-            size_hint=(1, 0.5))
+            size_hint=(1, 0.5),
+            font_size=20,
+            background_color=(0, 0, 0, 1),
+            foreground_color=(1, 1, 1, 1))
         # could implement clipboard copy here or convert to Button
         # nextaddress_input.bind(on_text_validate=on_enter)
         main_layout.add_widget(nextaddress_input)
