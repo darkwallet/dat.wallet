@@ -1,8 +1,12 @@
 You will need:
 
+    $ mkdir depends
+    $ cd depends
     $ git clone https://github.com/caedesvvv/zmqproto.git
-
-    $ git clone https://github.com:darkwallet/python-obelisk.git
+    $ git clone https://github.com/darkwallet/python-obelisk.git
+    $ cd ..
+    $ ln -s depends/zmqproto/zmqproto .
+    $ ln -s depends/python-obelisk/ .
 
 These parent path where these repos are cloned will need to be added to
 your PYTHONPATH environment variable.
