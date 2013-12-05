@@ -14,6 +14,8 @@ from kivy.config import Config
 Config.set('graphics', 'width', '309')
 Config.set('graphics', 'height', '500')
 
+import clipboard
+
 class RootWidget(BoxLayout):
     pass
 
@@ -43,13 +45,8 @@ def get_transactions(start=0, amount=100):
     return item_strings
 
 def copy_address_to_clipboard(instance):
-    Clipboard.put(instance.nextaddress, 'TEXT')
-    Clipboard.put(instance.nextaddress, 'UTF8_STRING')
-    Clipboard.put(instance.nextaddress, 'text/plain')
-    Clipboard.put(instance.nextaddress, 'text/plain;charset=utf-8')
-    #print Clipboard.get('TEXT')
+    clipboard.copy(instance.next_address)
     print Clipboard.get('UTF8_STRING')
-    #print Clipboard.get('text/plain')
 
 def call_send(instance):
     print 'call_send called'
@@ -93,7 +90,7 @@ class MainApp(App):
         main_layout.add_widget(sendaddress)
 
         sendsection = BoxLayout(orientation='horizontal', size_hint_y=0.4)
-        sendsection.add_widget(TextInput(text='125', halign='right', font_size=20, padding=20))
+        sendsection.add_widget(TextInput(text='125', halign='right', font_size=20, padding=(20, 20)))
         sendsection.add_widget(Label(text='mBTC', halign='left'))
         # TODO get TextInput value, validate?, and send to backend
         sendbutton = Button(text='Send')
