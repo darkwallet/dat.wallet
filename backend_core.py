@@ -36,13 +36,11 @@ class Backend:
 
     def poll_histories(self, history_callback):
         for address in self.addrs.keys():
-            print "calloing", address
             def history_fetched(ec, history):
-                print "hello"
                 self.history_fetched(ec, history, address, history_callback)
             self.client.fetch_history(address, history_fetched)
 
-    def history_fetched(ec, history, address, history_callback):
+    def history_fetched(self, ec, history, address, history_callback):
         if ec != None:
             print >> sys.stderr, "Error fetching history:", ec
             return
