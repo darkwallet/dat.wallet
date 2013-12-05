@@ -1,3 +1,6 @@
+# dat.wallet
+
+## Installation
 You will need:
 
     $ mkdir depends
@@ -13,3 +16,9 @@ your PYTHONPATH environment variable.
 
     $ export PYTHONPATH=$PYTHONPATH:$(pwd)
 
+
+
+# Usage
+kivy main.py -- "correct horse battery staple"
+
+Where "correct horse battery staple" is your seed phrase. Note the space between the -- and the seed phrase

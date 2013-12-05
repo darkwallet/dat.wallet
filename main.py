@@ -1,3 +1,4 @@
+import sys
 from kivy.app import App
 from kivy.graphics import Color, Rectangle
 from kivy.uix.boxlayout import BoxLayout
@@ -22,25 +23,6 @@ import clipboard
 class RootWidget(BoxLayout):
     pass
 
-class CustomLayout(FloatLayout):
-
-    def __init__(self, **kwargs):
-        # make sure we aren't overriding any important functionality
-        super(CustomLayout, self).__init__(**kwargs)
-
-        with self.canvas.before:
-            Color(0, 1, 0, 1) # green; colors range from 0-1 instead of 0-255
-            self.rect = Rectangle(
-                            size=self.size,
-                            pos=self.pos)
-
-        self.bind(
-                    size=self._update_rect,
-                    pos=self._update_rect)
-
-    def _update_rect(self, instance, value):
-        self.rect.pos = instance.pos
-        self.rect.size = instance.size
 
 def get_transactions(start=0, amount=100):
     item_strings=[('+500 mBTC sent to 1MNmTP...') for index in range(amount)]
@@ -71,12 +53,6 @@ def show_copied_popup(address):
     col.add_widget(button)
     return col
 
-def call_send(instance):
-    print 'call_send called'
-    # TODO get mBTC from input field
-    # TODO validate address
-    # TODO call backend send function
-
 class SendSection(BoxLayout):
     def __init__(self, **kwargs):
         super(SendSection, self).__init__(**kwargs)
@@ -84,8 +60,7 @@ class SendSection(BoxLayout):
         self.main_layout = BoxLayout(orientation='vertical')
 
         self.sendaddress = TextInput(hint_text="Enter a payment address", size_hint_y=0.2, font_size=20)
-        #self.main_layout(self.sendaddress)
-        self.add_widget(self.sendaddress)
+        self.main_layout.add_widget(self.sendaddress)
 
         self.sendsection = BoxLayout(orientation='horizontal', size_hint_y=0.4)
         self.amount_mbtc = TextInput(text='125', halign='right', font_size=20, padding=(20, 20))
@@ -95,28 +70,22 @@ class SendSection(BoxLayout):
         self.sendbutton.bind(on_press=self.call_send)
         self.sendsection.add_widget(self.sendbutton)
 
-        #self.main_layout(self.sendsection)
-        #self.add_widget(main_layout)
-        self.add_widget(self.sendsection)
+        self.main_layout.add_widget(self.sendsection)
+
+        self.add_widget(self.main_layout)
 
     def call_send(self, instance):
-        print 'got address ', self.sendaddress.text, 'with amount ', str(self.amount_mbtc.text)
+        toaddress = self.sendaddress.text
+        # precision of float() ?
+        amount_satoshis = float(self.amount_mbtc.text) * 1e5
+        print 'should send', str(amount_satoshis) ,'to address ', toaddress
         # TODO validate address
         # TODO call backend send function
-
-
-        self.bind(
-                    size=self._update_rect,
-                    pos=self._update_rect)
-
-    def _update_rect(self, instance, value):
-        self.rect.pos = instance.pos
-        self.rect.size = instance.size
 
 class MainApp(App):
 
     def build(self):
-        self.backend = backend.Backend("1234")
+        self.backend = backend.Backend(seedphrase)
         root = RootWidget()
 
         main_layout = BoxLayout(orientation='vertical')
@@ -159,4 +128,9 @@ class MainApp(App):
         return root
 
 if __name__ == '__main__':
+    if len(sys.argv) == 1: sys.argv[1:] = ["correct horse battery staple"]
+    print "\n".join(sys.argv)
+
+    seedphrase = sys.argv[1].encode("hex")
+    print seedphrase
     MainApp().run()
