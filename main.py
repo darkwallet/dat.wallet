@@ -55,16 +55,26 @@ class MainApp(App):
         nextaddress_label = Label(text='next receive address', size_hint_y=0.3, font_size=20)
         main_layout.add_widget(nextaddress_label)
 
+<<<<<<< HEAD
         # FIX wire this text input up to a real address which may change when a transaction to this address occurs
+=======
+>>>>>>> 14d72b5ee0c305a53a8bd2e8710bbde8fdc65f90
         nextaddress_input = TextInput(
             text='1MNmTPTRp9g4ruE5Hw7kb2AZuaRpVLwGta',
             multiline=False,
             readonly=True,
             #halign='center',
+<<<<<<< HEAD
             size_hint_y=0.3,
             font_size=20,
             foreground_color=(1,1,1,1),
             background_color=(0,0,0,1))
+=======
+            size_hint=(1, 0.5),
+            font_size=20,
+            background_color=(0, 0, 0, 1),
+            foreground_color=(1, 1, 1, 1))
+>>>>>>> 14d72b5ee0c305a53a8bd2e8710bbde8fdc65f90
         # could implement clipboard copy here or convert to Button
         # nextaddress_input.bind(on_text_validate=on_enter)
         main_layout.add_widget(nextaddress_input)
