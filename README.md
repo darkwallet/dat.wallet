@@ -19,6 +19,6 @@ your PYTHONPATH environment variable.
 
 
 # Usage
-kivy main.py -- "correct horse battery staple"
+    kivy main.py -- "correct horse battery staple"
 
 Where "correct horse battery staple" is your seed phrase. Note the space between the -- and the seed phrase
