@@ -6,7 +6,7 @@ You will need:
     $ git clone https://github.com/darkwallet/python-obelisk.git
     $ cd ..
     $ ln -s depends/zmqproto/zmqproto .
-    $ ln -s depends/python-obelisk/ .
+    $ ln -s depends/python-obelisk/obelisk .
 
 These parent path where these repos are cloned will need to be added to
 your PYTHONPATH environment variable.
