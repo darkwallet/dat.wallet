@@ -19,25 +19,25 @@ import clipboard
 class RootWidget(BoxLayout):
     pass
 
-# class CustomLayout(FloatLayout):
+class CustomLayout(FloatLayout):
 
-#     def __init__(self, **kwargs):
-#         # make sure we aren't overriding any important functionality
-#         super(CustomLayout, self).__init__(**kwargs)
+    def __init__(self, **kwargs):
+        # make sure we aren't overriding any important functionality
+        super(CustomLayout, self).__init__(**kwargs)
 
-#         with self.canvas.before:
-#             Color(0, 1, 0, 1) # green; colors range from 0-1 instead of 0-255
-#             self.rect = Rectangle(
-#                             size=self.size,
-#                             pos=self.pos)
+        with self.canvas.before:
+            Color(0, 1, 0, 1) # green; colors range from 0-1 instead of 0-255
+            self.rect = Rectangle(
+                            size=self.size,
+                            pos=self.pos)
 
-#         self.bind(
-#                     size=self._update_rect,
-#                     pos=self._update_rect)
+        self.bind(
+                    size=self._update_rect,
+                    pos=self._update_rect)
 
-#     def _update_rect(self, instance, value):
-#         self.rect.pos = instance.pos
-#         self.rect.size = instance.size
+    def _update_rect(self, instance, value):
+        self.rect.pos = instance.pos
+        self.rect.size = instance.size
 
 def get_transactions(start=0, amount=100):
     item_strings=[('+500 mBTC sent to ' + str(index)) for index in range(amount)]
@@ -48,11 +48,43 @@ def copy_address_to_clipboard(instance):
     clipboard.copy(instance.next_address)
     print Clipboard.get('UTF8_STRING')
 
-def call_send(instance):
-    print 'call_send called'
-    # TODO get mBTC from input field
-    # TODO validate address
-    # TODO call backend send function
+
+
+class SendSection(BoxLayout):
+    def __init__(self, **kwargs):
+        super(SendSection, self).__init__(**kwargs)
+
+        self.main_layout = BoxLayout(orientation='vertical')
+
+        self.sendaddress = TextInput(hint_text="Enter a payment address", size_hint_y=0.2, font_size=20)
+        #self.main_layout(self.sendaddress)
+        self.add_widget(self.sendaddress)
+
+        self.sendsection = BoxLayout(orientation='horizontal', size_hint_y=0.4)
+        self.amount_mbtc = TextInput(text='125', halign='right', font_size=20, padding=(20, 20))
+        self.sendsection.add_widget(self.amount_mbtc)
+        self.sendsection.add_widget(Label(text='mBTC', halign='left'))
+        self.sendbutton = Button(text='Send')
+        self.sendbutton.bind(on_press=self.call_send)
+        self.sendsection.add_widget(self.sendbutton)
+
+        #self.main_layout(self.sendsection)
+        #self.add_widget(main_layout)
+        self.add_widget(self.sendsection)
+
+    def call_send(self, instance):
+        print 'got address ', self.sendaddress.text, 'with amount ', str(self.amount_mbtc.text)
+        # TODO validate address
+        # TODO call backend send function
+
+
+        self.bind(
+                    size=self._update_rect,
+                    pos=self._update_rect)
+
+    def _update_rect(self, instance, value):
+        self.rect.pos = instance.pos
+        self.rect.size = instance.size
 
 class MainApp(App):
 
@@ -81,24 +113,11 @@ class MainApp(App):
             font_size=20,
             foreground_color=(1,1,1,1))
         nextaddress_input.bind(on_press=copy_address_to_clipboard)
-        nextaddress_input.nextaddress = next_address
+        nextaddress_input.next_address = next_address
         main_layout.add_widget(nextaddress_input)
         ### end next address section
 
-        ### send section
-        sendaddress = TextInput(hint_text="Enter a payment address", size_hint_y=0.2, font_size=20)
-        main_layout.add_widget(sendaddress)
-
-        sendsection = BoxLayout(orientation='horizontal', size_hint_y=0.4)
-        sendsection.add_widget(TextInput(text='125', halign='right', font_size=20, padding=(20, 20)))
-        sendsection.add_widget(Label(text='mBTC', halign='left'))
-        # TODO get TextInput value, validate?, and send to backend
-        sendbutton = Button(text='Send')
-        sendbutton.bind(on_press=call_send)
-        sendsection.add_widget(sendbutton)
-
-        main_layout.add_widget(sendsection)
-        ### end send section
+        main_layout.add_widget(SendSection())
 
         # ##transaction section
         # TODO populate this list with real transaction data
