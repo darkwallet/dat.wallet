@@ -10,7 +10,8 @@ from kivy.uix.listview import ListView
 from kivy.core.clipboard import Clipboard
 
 from kivy.config import Config
-Config.set('graphics', 'width', '250')
+# golden ratio
+Config.set('graphics', 'width', '309')
 Config.set('graphics', 'height', '500')
 
 class RootWidget(BoxLayout):
@@ -42,8 +43,19 @@ def get_transactions(start=0, amount=100):
     return item_strings
 
 def copy_address_to_clipboard(instance):
+    Clipboard.put(instance.nextaddress, 'TEXT')
     Clipboard.put(instance.nextaddress, 'UTF8_STRING')
+    Clipboard.put(instance.nextaddress, 'text/plain')
+    Clipboard.put(instance.nextaddress, 'text/plain;charset=utf-8')
+    #print Clipboard.get('TEXT')
     print Clipboard.get('UTF8_STRING')
+    #print Clipboard.get('text/plain')
+
+def call_send(instance):
+    print 'call_send called'
+    # TODO get mBTC from input field
+    # TODO validate address
+    # TODO call backend send function
 
 class MainApp(App):
 
@@ -84,7 +96,9 @@ class MainApp(App):
         sendsection.add_widget(TextInput(text='125', halign='right', font_size=20, padding=20))
         sendsection.add_widget(Label(text='mBTC', halign='left'))
         # TODO get TextInput value, validate?, and send to backend
-        sendsection.add_widget(Button(text='Send'))
+        sendbutton = Button(text='Send')
+        sendbutton.bind(on_press=call_send)
+        sendsection.add_widget(sendbutton)
 
         main_layout.add_widget(sendsection)
         ### end send section
