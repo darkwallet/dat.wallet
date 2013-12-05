@@ -1,2 +1,10 @@
 *.pyc
 .gitignore
+
+depends/python-obelisk/
+
+depends/zmqproto/
+
+obelisk
+
+zmqproto
