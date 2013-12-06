@@ -8,15 +8,17 @@ from kivy.uix.image import AsyncImage
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
-from kivy.uix.listview import ListView
+from kivy.uix.treeview import TreeView, TreeViewLabel
 from kivy.uix.popup import Popup
+from kivy.uix.listview import ListView, ListItemLabel, ListItemButton
+from kivy.adapters.listadapter import ListAdapter
 from kivy.core.clipboard import Clipboard
 
 from kivy.config import Config
 # golden ratio
 Config.set('graphics', 'width', 309)
 Config.set('graphics', 'height', 500)
-Config.set('graphics', 'resizable', 0)
+#Config.set('graphics', 'resizable', 0)
 
 from kivy.support import install_twisted_reactor
 install_twisted_reactor()
@@ -129,16 +131,38 @@ class SendSection(BoxLayout):
 class TranscationSection(BoxLayout):
 
     def __init__(self, backend, **kwargs):
-        super(TranscationSection, self).__init__(**kwargs)
+        super(TranscationSection, self).__init__(**kwargs)       
         self.backend = backend
-        self.transactions = {}
+        self.transactions = [{'value': 'No transactions'}]
 
         main_layout = BoxLayout(orientation='vertical')
 
-        self.transaction_history = ListView(item_strings=self.get_transactions(0,50))
+        self.transaction_history = self.make_transaction_widget()
         main_layout.add_widget(self.transaction_history)
 
         self.add_widget(main_layout)
+
+
+
+
+    def make_transaction_widget(self):
+        print 'make_transaction_widget called'
+        args_converter = lambda row_index, rec: {'text': str(rec['value']),
+                                         'size_hint_y': None,
+                                         'height': 25}
+
+        #self.transaction_history = ListView(item_strings=self.get_transactions(0,50))
+        print self.transactions
+        transaction_history = ListAdapter(data=self.transactions,
+            args_converter=args_converter,
+            cls=ListItemLabel,
+            selection_mode='single',
+            allow_empty_selection=False)
+
+        #self.list_view.adapter = transaction_history
+        list_view = ListView(adapter=transaction_history)
+        return list_view
+
 
     def get_transactions(self, start=0, amount=100):
         print self.transactions
@@ -158,7 +182,7 @@ class MainApp(App):
     def __init__(self, backend):
         super(MainApp, self).   __init__()
         self.backend = backend
-        self.transactions = {}
+        self.transactions = []
 
     def cb(self, addr, history):
         # print addr, history
@@ -166,12 +190,16 @@ class MainApp(App):
             o_hash, o_index, o_height, value, s_hash, s_index, s_height = row
             if s_index != MAX_UINT32:
                 value = -value
-            self.transactions[o_hash.encode("hex")] = {'address': addr, 'o_index': o_index, 'o_height': o_height, 'value': value,
-            's_hash': s_hash.encode("hex"), 's_index': s_index, 's_height': s_height}
+            self.transactions.append({'address': addr, 'o_hash': o_hash.encode('hex'), 'o_index': o_index, 'o_height': o_height, 'value': value,
+            's_hash': s_hash.encode("hex"), 's_index': s_index, 's_height': s_height})
 
-        self.trans.transaction_history
+        #self.trans.transaction_history.add_node(TreeViewLabel(text=str(value) + ' satoshis sent to/from ' + addr))
+        self.trans.transactions = self.transactions
+        #self.trans.remove_widget(self.trans.transaction_history)
+        self.trans.transaction_history = self.trans.make_transaction_widget()
+        #self.trans.add_widget(self.trans.transaction_history)
 
-        print self.transactions
+        #print self.transactions
 
     def build(self):
         root = RootWidget()
