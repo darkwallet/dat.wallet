@@ -14,8 +14,9 @@ from kivy.core.clipboard import Clipboard
 
 from kivy.config import Config
 # golden ratio
-Config.set('graphics', 'width', '309')
-Config.set('graphics', 'height', '500')
+Config.set('graphics', 'width', 309)
+Config.set('graphics', 'height', 500)
+Config.set('graphics', 'resizable', 0)
 
 from kivy.support import install_twisted_reactor
 install_twisted_reactor()
@@ -24,14 +25,17 @@ from twisted.internet import reactor
 import backend_core
 import clipboard
 
+MAX_UINT32 = 4294967295
+
 class RootWidget(BoxLayout):
     pass
 
 
 class BalanceSection(BoxLayout):
 
-    def __init__(self, **kwargs):
+    def __init__(self, backend, **kwargs):
         super(BalanceSection, self).__init__(**kwargs)
+        self.backend = backend
 
         main_layout = BoxLayout(orientation='horizontal')
 
@@ -42,8 +46,8 @@ class BalanceSection(BoxLayout):
 
 class ReceiveSection(BoxLayout):
 
-    def __init__(self, backend):
-        super(ReceiveSection, self).__init__()
+    def __init__(self, backend, **kwargs):
+        super(ReceiveSection, self).__init__(**kwargs)
         self.backend = backend
 
         main_layout = BoxLayout(orientation='vertical')
@@ -92,8 +96,9 @@ class ReceiveSection(BoxLayout):
 
 class SendSection(BoxLayout):
 
-    def __init__(self, **kwargs):
+    def __init__(self, backend, **kwargs):
         super(SendSection, self).__init__(**kwargs)
+        self.backend = backend
 
         self.main_layout = BoxLayout(orientation='vertical')
 
@@ -123,44 +128,64 @@ class SendSection(BoxLayout):
 
 class TranscationSection(BoxLayout):
 
-    def __init__(self, **kwargs):
+    def __init__(self, backend, **kwargs):
         super(TranscationSection, self).__init__(**kwargs)
+        self.backend = backend
+        self.transactions = {}
 
         main_layout = BoxLayout(orientation='vertical')
 
-        # TODO populate this list with real transaction data
-        transaction_history = ListView(item_strings=self.get_transactions(0,50))
-        main_layout.add_widget(transaction_history)
+        self.transaction_history = ListView(item_strings=self.get_transactions(0,50))
+        main_layout.add_widget(self.transaction_history)
 
         self.add_widget(main_layout)
 
     def get_transactions(self, start=0, amount=100):
-        item_strings=[('row ' + str(index) + ': +500 mBTC sent to 1MNmTP...') for index in range(amount)]
+        print self.transactions
+        #item_strings=[('row ' + str(index) + ': +500 mBTC sent to 1MNmTP...') for index in range(amount)]
+        transaction_strings=[]
+        for txhash, tx in self.transactions:
+            if s_index != MAX_UINT32:
+                transaction_strings.append('+' + tx['value'] + ' satoshis received on ' + tx['address'])
+            else:
+                transaction_strings.append(tx['value'] + ' satoshis sent from ' + tx['addrdress'])
 
-        return item_strings
-
-
-def cb(addr, history):
-    print addr, history
+        print transaction_strings
+        return transaction_strings
 
 class MainApp(App):
 
     def __init__(self, backend):
-        super(MainApp, self).__init__()
+        super(MainApp, self).   __init__()
         self.backend = backend
+        self.transactions = {}
+
+    def cb(self, addr, history):
+        # print addr, history
+        for row in history:
+            o_hash, o_index, o_height, value, s_hash, s_index, s_height = row
+            if s_index != MAX_UINT32:
+                value = -value
+            self.transactions[o_hash.encode("hex")] = {'address': addr, 'o_index': o_index, 'o_height': o_height, 'value': value,
+            's_hash': s_hash.encode("hex"), 's_index': s_index, 's_height': s_height}
+
+        self.trans.transaction_history
+
+        print self.transactions
 
     def build(self):
         root = RootWidget()
 
         main_layout = BoxLayout(orientation='vertical')
-        main_layout.add_widget(BalanceSection(size_hint_y=0.4))
-        main_layout.add_widget(ReceiveSection(backend))
-        main_layout.add_widget(SendSection(size_hint_y=0.7))
-        main_layout.add_widget(TranscationSection(size_hint_y=1))
+        main_layout.add_widget(BalanceSection(backend=self.backend, size_hint_y=0.4))
+        main_layout.add_widget(ReceiveSection(backend=self.backend, size_hint_y=1))
+        main_layout.add_widget(SendSection(backend=self.backend, size_hint_y=0.7))
+        self.trans = TranscationSection(backend=self.backend, size_hint_y=1)
+        main_layout.add_widget(self.trans)
 
         root.add_widget(main_layout)
 
-        self.backend.update(cb)
+        self.backend.update(self.cb)
 
         return root
 
@@ -168,6 +193,8 @@ if __name__ == '__main__':
     if len(sys.argv) == 1: sys.argv[1:] = ["correct horse battery staple"]
     print "\n".join(sys.argv)
 
+    #import mnemonic
+    #seedphrase = mnemonic.mn_decode(sys.argv[1])
     seedphrase = sys.argv[1].encode("hex")
     print seedphrase
     backend = backend_core.Backend(seedphrase)

@@ -35,7 +35,8 @@ class Backend:
         self.poll_height()
 
     def poll_histories(self, history_callback):
-        for address in self.addrs.keys():
+        #for address in self.addrs.keys():
+        for address in ['1TAYLoRvKqjytcokRx9ZfNNF9odQyU4Bf']:
             def history_fetched(ec, history):
                 self.history_fetched(ec, history, address, history_callback)
             self.client.fetch_history(address, history_fetched)
