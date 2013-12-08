@@ -1,7 +1,7 @@
 # dat.wallet
 
 ## Installation
-You will need:
+You will need to install Kivy (http://kivy.org) and Twisted (http://twistedmatrix.com/trac/wiki/Downloads) and use the following commands:
 
     $ sudo apt-get install python-pip
     $ sudo pip install ecdsa slowaes
