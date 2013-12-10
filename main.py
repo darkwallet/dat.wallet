@@ -194,7 +194,7 @@ def add_output(tx, address, value):
 class TransactionSection(BoxLayout):
 
     def __init__(self, backend, **kwargs):
-        super(TranscationSection, self).__init__(**kwargs)       
+        super(TransactionSection, self).__init__(**kwargs)       
         self.backend = backend
         self.transactions = [{'value': 'No transactions'}]
 
