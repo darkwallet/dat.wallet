@@ -22,12 +22,13 @@ Config.set('graphics', 'height', 500)
 
 from kivy.support import install_twisted_reactor
 install_twisted_reactor()
-from twisted.internet import reactor
+from twisted.internet import task, reactor
+
+from decimal import Decimal as D
 
 import backend_core
 import clipboard
-
-MAX_UINT32 = 4294967295
+import obelisk
 
 class RootWidget(BoxLayout):
     pass
@@ -42,9 +43,23 @@ class BalanceSection(BoxLayout):
         main_layout = BoxLayout(orientation='horizontal')
 
         # TODO wire up the real amount to a formatter which gets fed here
-        main_layout.add_widget(Label(text='1,276.00 mBTC', font_size=28, bold=True))
+        self.balance_label = Label(text='00.00 mBTC', font_size=28, bold=True)
+        main_layout.add_widget(self.balance_label)
 
         self.add_widget(main_layout)
+
+        # This is the shittiest method I can imagine to update balance.
+        # don't do this ever.
+        later = task.LoopingCall(self.recalc_balance)
+        later.start(5)
+
+    def recalc_balance(self):
+        total_balance = 0
+        for addr, history in self.backend.addrs.iteritems():
+            total_balance += sum(row[3] for row in history
+                                 if row[-1] == obelisk.MAX_UINT32)
+        millis = D(total_balance) / 100000
+        self.balance_label.text = "%.2f mBTC" % millis
 
 class ReceiveSection(BoxLayout):
 
@@ -108,7 +123,7 @@ class SendSection(BoxLayout):
         self.main_layout.add_widget(self.sendaddress)
 
         self.sendsection = BoxLayout(orientation='horizontal', size_hint_y=0.4)
-        self.amount_mbtc = TextInput(text='125', halign='right', font_size=20, padding=(20, 20))
+        self.amount_mbtc = TextInput(text='0', halign='right', font_size=20, padding=(20, 20))
         self.sendsection.add_widget(self.amount_mbtc)
         self.sendsection.add_widget(Label(text='mBTC', halign='left'))
         self.sendbutton = Button(text='Send')
@@ -120,15 +135,63 @@ class SendSection(BoxLayout):
         self.add_widget(self.main_layout)
 
     def call_send(self, instance):
-        toaddress = self.sendaddress.text
-        # precision of float() ?
-        amount_satoshis = float(self.amount_mbtc.text) * 1e5
-        print 'should send', str(amount_satoshis) ,'to address ', toaddress
+        address = self.sendaddress.text
+        amount_satoshis = D(self.amount_mbtc.text) * 10**5
+        # debug
+        address = "1Fufjpf9RM2aQsGedhSpbSCGRHrmLMJ7yY"
+        amount_satoshis = 100000
+        print 'should send', str(amount_satoshis) ,'to address', address
         # TODO validate address
         # TODO call backend send function
+        optimal_outputs = self.backend.select_outputs(amount_satoshis)
+        print optimal_outputs
+        if optimal_outputs is None:
+            self.show_invalid_balance_popup()
+            return
+        # Add inputs
+        tx = obelisk.Transaction()
+        for output in optimal_outputs.points:
+            add_input(tx, output.point)
+        add_output(tx, address, amount_satoshis)
+        fee = 10000
+        if optimal_outputs.change > fee:
+            change = optimal_outputs.change - fee
+            add_output(tx, self.backend.change_address, change)
+        for i, output in enumerate(optimal_outputs.points):
+            obelisk.sign_transaction_input(tx, i, output.key)
+        print tx
+        print tx.serialize().encode("hex")
 
+    def show_invalid_balance_popup(self):
+        btnclose = Button(text='Close this popup', size_hint_y=None, height='50sp')
+        content = BoxLayout(orientation='vertical')
+        row_length = 15
+        content.add_widget(Label(text='Not enough money for send.'))
+        content.add_widget(btnclose)
+        popup = Popup(content=content, title='Not enough...',
+                      size_hint=(None, None), size=('300dp', '300dp'))
+        btnclose.bind(on_release=popup.dismiss)
+        button = Button(text='Open popup', size_hint=(None, None),
+                        size=('150sp', '70dp'),
+                        on_release=popup.open)
+        popup.open()
+        col = AnchorLayout()
+        col.add_widget(button)
+        return col
 
-class TranscationSection(BoxLayout):
+def add_input(tx, prevout):
+    input = obelisk.TxIn()
+    input.previous_output.hash = prevout.hash
+    input.previous_output.index = prevout.index
+    tx.inputs.append(input)
+
+def add_output(tx, address, value):
+    output = obelisk.TxOut()
+    output.value = int(value * 10**8)
+    output.script = obelisk.output_script(address)
+    tx.outputs.append(output)
+
+class TransactionSection(BoxLayout):
 
     def __init__(self, backend, **kwargs):
         super(TranscationSection, self).__init__(**kwargs)       
@@ -169,7 +232,7 @@ class TranscationSection(BoxLayout):
         #item_strings=[('row ' + str(index) + ': +500 mBTC sent to 1MNmTP...') for index in range(amount)]
         transaction_strings=[]
         for txhash, tx in self.transactions:
-            if s_index != MAX_UINT32:
+            if s_index != obelisk.MAX_UINT32:
                 transaction_strings.append('+' + tx['value'] + ' satoshis received on ' + tx['address'])
             else:
                 transaction_strings.append(tx['value'] + ' satoshis sent from ' + tx['addrdress'])
@@ -188,7 +251,7 @@ class MainApp(App):
         # print addr, history
         for row in history:
             o_hash, o_index, o_height, value, s_hash, s_index, s_height = row
-            if s_index != MAX_UINT32:
+            if s_index != obelisk.MAX_UINT32:
                 value = -value
             self.transactions.append({'address': addr, 'o_hash': o_hash.encode('hex'), 'o_index': o_index, 'o_height': o_height, 'value': value,
             's_hash': s_hash.encode("hex"), 's_index': s_index, 's_height': s_height})
@@ -208,12 +271,13 @@ class MainApp(App):
         main_layout.add_widget(BalanceSection(backend=self.backend, size_hint_y=0.4))
         main_layout.add_widget(ReceiveSection(backend=self.backend, size_hint_y=1))
         main_layout.add_widget(SendSection(backend=self.backend, size_hint_y=0.7))
-        self.trans = TranscationSection(backend=self.backend, size_hint_y=1)
+        self.trans = TransactionSection(backend=self.backend, size_hint_y=1)
         main_layout.add_widget(self.trans)
 
         root.add_widget(main_layout)
 
-        self.backend.update(self.cb)
+        later = task.LoopingCall(self.backend.update, self.cb)
+        later.start(5)
 
         return root
 
@@ -223,8 +287,8 @@ if __name__ == '__main__':
 
     #import mnemonic
     #seedphrase = mnemonic.mn_decode(sys.argv[1])
-    seedphrase = sys.argv[1].encode("hex")
-    print seedphrase
-    backend = backend_core.Backend(seedphrase)
+    seed = "945d3c0e7b2343f327f1c6ec900e5406"
+    print seed.encode("hex")
+    backend = backend_core.Backend(seed)
     MainApp(backend).run()
 
