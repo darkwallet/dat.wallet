@@ -156,8 +156,8 @@ class SendSection(BoxLayout):
         add_output(tx, self.backend.current_change_address, change)
         for i, output in enumerate(optimal_outputs.points):
             obelisk.sign_transaction_input(tx, i, output.key)
-        print tx.serialize().encode("hex")
-        #self.backend.broadcast(tx)
+        #print tx.serialize().encode("hex")
+        self.backend.broadcast(tx)
 
     def show_invalid_balance_popup(self):
         btnclose = Button(text='Close this popup', size_hint_y=None, height='50sp')
