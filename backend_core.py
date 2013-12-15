@@ -49,12 +49,21 @@ class Backend:
         self.key_index = 0
         self.client = obelisk.ObeliskOfLightClient('tcp://37.139.11.99:9091')
         self.addrs = {self.current_address: []}
-        self.keys = {self.current_address: self.current_key}
+        self.keys = {
+            self.current_address: self.current_key,
+            self.current_change_address: self.current_change_key}
         self.last_height = None
 
     def generate_key(self, n):
         key = obelisk.EllipticCurveKey()
         secret = self.wallet.branch(n).secret
+        assert len(secret) == 32
+        key.set_secret(secret)
+        return key
+
+    def generate_change_key(self, n):
+        key = obelisk.EllipticCurveKey()
+        secret = self.wallet.branch_prime(n).secret
         assert len(secret) == 32
         key.set_secret(secret)
         return key
@@ -65,24 +74,26 @@ class Backend:
     def next_key(self):
         self.key_index += 1
         self.addrs[self.current_address] = []
+        self.addrs[self.current_change_address] = []
         self.keys[self.current_address] = self.current_key
-        self.update()
+        self.keys[self.current_change_address] = self.current_change_key
 
     @property
     def current_key(self):
         return self.generate_key(self.key_index)
 
     @property
+    def current_change_key(self):
+        return self.generate_change_key(self.key_index)
+
+    @property
     def current_address(self):
         return self.generate_address(self.key_index)
 
     @property
-    def change_address(self):
+    def current_change_address(self):
         key = obelisk.EllipticCurveKey()
-        secret = self.wallet.branch_prime(self.key_index)
-        assert len(secret) == 32
-        key.set_secret(secret)
-        return key
+        return self.wallet.branch_prime(self.key_index).address
 
     def update(self, history_callback):
         self.poll_histories(history_callback)

@@ -131,14 +131,17 @@ class SendSection(BoxLayout):
 
     def call_send(self, instance):
         address = self.sendaddress.text
-        amount_satoshis = D(self.amount_mbtc.text) * 10**5
+        if not address or address[0] != "1":
+            # should show a popup here
+            print "Invalid address"
+            return
+        amount_satoshis = int(D(self.amount_mbtc.text) * 10**5)
         # debug
-        address = "1Fufjpf9RM2aQsGedhSpbSCGRHrmLMJ7yY"
-        amount_satoshis = 100000
         print 'should send', str(amount_satoshis) ,'to address', address
         # TODO validate address
         # TODO call backend send function
-        optimal_outputs = self.backend.select_outputs(amount_satoshis)
+        fee = 10000
+        optimal_outputs = self.backend.select_outputs(amount_satoshis + fee)
         print optimal_outputs
         if optimal_outputs is None:
             self.show_invalid_balance_popup()
@@ -148,13 +151,13 @@ class SendSection(BoxLayout):
         for output in optimal_outputs.points:
             add_input(tx, output.point)
         add_output(tx, address, amount_satoshis)
-        fee = 10000
-        if optimal_outputs.change > fee:
-            change = optimal_outputs.change - fee
-            add_output(tx, self.backend.change_address, change)
+        # Change output.
+        change = optimal_outputs.change - fee
+        add_output(tx, self.backend.current_change_address, change)
         for i, output in enumerate(optimal_outputs.points):
             obelisk.sign_transaction_input(tx, i, output.key)
-        self.backend.broadcast(tx)
+        print tx.serialize().encode("hex")
+        #self.backend.broadcast(tx)
 
     def show_invalid_balance_popup(self):
         btnclose = Button(text='Close this popup', size_hint_y=None, height='50sp')
@@ -245,6 +248,9 @@ class MainApp(App):
         self.transactions = {}
 
     def cb(self, addr, history):
+        if addr == self.backend.current_address and history:
+            print "Next key in wallet."
+            self.backend.next_key()
         #print addr, history
         display_history = []
         for row in history:
