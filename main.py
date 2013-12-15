@@ -48,11 +48,6 @@ class BalanceSection(BoxLayout):
 
         self.add_widget(main_layout)
 
-        # This is the shittiest method I can imagine to update balance.
-        # don't do this ever.
-        later = task.LoopingCall(self.recalc_balance)
-        later.start(5)
-
     def recalc_balance(self):
         total_balance = 0
         for addr, history in self.backend.addrs.iteritems():
@@ -199,6 +194,7 @@ class TransactionSection(BoxLayout):
 
         main_layout = BoxLayout(orientation='vertical')
 
+        self.list_view = None
         self.transaction_history = self.make_transaction_widget()
         main_layout.add_widget(self.transaction_history)
 
@@ -221,9 +217,11 @@ class TransactionSection(BoxLayout):
             selection_mode='single',
             allow_empty_selection=False)
 
-        #self.list_view.adapter = transaction_history
-        list_view = ListView(adapter=transaction_history)
-        return list_view
+        if self.list_view is None:
+            self.list_view = ListView(adapter=transaction_history)
+        else:
+            self.list_view.adapter = transaction_history
+        return self.list_view
 
 
     def get_transactions(self, start=0, amount=100):
@@ -244,30 +242,46 @@ class MainApp(App):
     def __init__(self, backend):
         super(MainApp, self).   __init__()
         self.backend = backend
-        self.transactions = []
+        self.transactions = {}
 
     def cb(self, addr, history):
-        # print addr, history
+        #print addr, history
+        display_history = []
         for row in history:
             o_hash, o_index, o_height, value, s_hash, s_index, s_height = row
-            if s_index != obelisk.MAX_UINT32:
-                value = -value
-            self.transactions.append({'address': addr, 'o_hash': o_hash.encode('hex'), 'o_index': o_index, 'o_height': o_height, 'value': value,
-            's_hash': s_hash.encode("hex"), 's_index': s_index, 's_height': s_height})
+            display_addr = addr[:6] + "..."
+            display_history.append(
+                ("%s +%s mBTC" % (display_addr, value / 10**5), o_height))
+            if s_index == obelisk.MAX_UINT32:
+                continue
+            display_history.append(
+                ("%s -%s mBTC" % (display_addr, value / 10**5), s_height))
+        display_history.sort(key=lambda display_row: display_row[1])
+        self.transactions[addr] = display_history
+        self.rebuild_history()
+
+    def rebuild_history(self):
+        mixed = []
+        for key, display_history in self.transactions.iteritems():
+            for row in display_history:
+                mixed.append({'value': row[0]})
 
         #self.trans.transaction_history.add_node(TreeViewLabel(text=str(value) + ' satoshis sent to/from ' + addr))
-        self.trans.transactions = self.transactions
+        # For display
+        self.trans.transactions = mixed
         #self.trans.remove_widget(self.trans.transaction_history)
         self.trans.transaction_history = self.trans.make_transaction_widget()
         #self.trans.add_widget(self.trans.transaction_history)
 
         #print self.transactions
+        self.balance.recalc_balance()
 
     def build(self):
         root = RootWidget()
 
         main_layout = BoxLayout(orientation='vertical')
-        main_layout.add_widget(BalanceSection(backend=self.backend, size_hint_y=0.4))
+        self.balance = BalanceSection(backend=self.backend, size_hint_y=0.4)
+        main_layout.add_widget(self.balance)
         main_layout.add_widget(ReceiveSection(backend=self.backend, size_hint_y=1))
         main_layout.add_widget(SendSection(backend=self.backend, size_hint_y=0.7))
         self.trans = TransactionSection(backend=self.backend, size_hint_y=1)
