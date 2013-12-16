@@ -1,0 +1,8 @@
+Install python-sphinx package.
+
+  $ make html
+
+Files are built into _build/html/index.html
+
+See http://sphinx-doc.org/rest.html for more info.
+
