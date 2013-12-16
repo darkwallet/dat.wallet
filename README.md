@@ -1,5 +1,7 @@
 # dat.wallet
 
+![User interface](http://images.weserv.nl/?url=i.imgur.com/I39zPfW.png&fnr)
+
 ## Installation
 You will need to install Kivy (http://kivy.org) and Twisted (http://twistedmatrix.com/trac/wiki/Downloads) and use the following commands:
 
