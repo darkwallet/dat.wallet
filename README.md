@@ -9,7 +9,7 @@ You will need to install Kivy (http://kivy.org) and Twisted (http://twistedmatri
     $ sudo pip install ecdsa slowaes
     $ mkdir depends
     $ cd depends
-    $ git clone https://github.com/caedesvvv/zmqproto.git
+    $ git clone https://github.com/darkwallet/zmqproto.git
     $ git clone https://github.com/darkwallet/python-obelisk.git
     $ cd ..
     $ ln -s depends/zmqproto/zmqproto .
